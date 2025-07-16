@@ -2,6 +2,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 import random
 import uuid
+import requests
+
+# FastAPI 서버 주소
+FASTAPI_URL = "http://localhost:8000/query"
 
 # 세션 상태 초기화
 if "chats" not in st.session_state:
@@ -40,7 +44,16 @@ def add_fig(role, content, dir_):
     
 def send_question_to_queue(question):
     add_message("user",f"{question}")
-    add_message("assistant", f"이것은 echo bot 입니다. {question}에 대한 답입니다.")
+    try:
+        response = requests.post(FASTAPI_URL, json={"question": question})
+        response.raise_for_status()  # 200 OK 아니면 예외 발생
+
+        result = response.json().get("result", "No result found.")
+        add_message("assistant", result)
+
+    except Exception as e:
+        error_msg = f"❗ FastAPI 서버 오류: {str(e)}"
+        add_message("assistant", error_msg)
 
 user_id = "HKW"
 depart_info = "admin"
